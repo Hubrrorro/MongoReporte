@@ -5,9 +5,9 @@ namespace ReporteKMS.Models
 {
     public class ModelAplicativo : ModeloGeneral
     {
-        [BsonElement("Aplicativo")]
+        [BsonElement("aplicativo")]
         public string Aplicativo { get; set; }
-        [BsonElement("Activo")]
-        public int Activo { get; set; }
+        [BsonElement("activo")]
+        public bool Activo { get; set; }
     }
 }

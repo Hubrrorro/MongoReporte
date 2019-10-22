@@ -1,0 +1,220 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<link href="~/Scripts/ECharts/lib/reset.css" rel="stylesheet" />
+<style>
+    h1 {
+        line-height: 60px;
+        height: 60px;
+        background: #146402;
+        text-align: center;
+        font-weight: bold;
+        color: #eee;
+        font-size: 14px;
+    }
+    .ciculoverde {
+    width: 20px;
+    height: 20px;
+    background-color: green;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    border-radius: 20px;
+  }
+    .ciculorojo {
+    width: 20px;
+    height: 20px;
+    background-color:red;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    border-radius: 20px;
+  }
+    /*.chart {
+        width:100%;
+        height: 400px !important;
+    }*/
+</style>
+<br />
+<br />
+<br />
+<div class="row">
+        <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3 form-group">
+            <label for="txtfecha" >Fecha del reporte</label>
+            <input type="text" readonly="" class="form-control" id="txtfecha">
+        </div>
+        <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3 form-group">
+            <label for="txtavaesperado" >Avance Esperado Total</label>
+            <input type="text" readonly="" class="form-control" id="txtavaesperado">
+        </div>
+        <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3 form-group">
+            <label for="txtavareal" >Avance Real Total</label>
+            <input type="text" readonly="" class="form-control" id="txtavareal">
+        </div>
+</div>
+<div class="row">
+    <table id="tblReporte" class="table table-hover table-responsive">
+        <thead>
+            <tr>
+                <th>Sección</th>
+                <th>Total Casos Prueba</th>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+                <th>Media al día</th>
+                <th>CP Pendientes por ejecutar Reales</th>
+                <th>CP Ejecutados Reales</th>
+                <th>CP Ejecutados-Correctos Reales</th>
+                <th>CP Ejecutados-Incidencia Reales</th>
+                <th>CP Pendientes por ejecutar Estimado</th>
+                <th>CP Ejecutados Estimado</th>
+                <th>Avance Real</th>
+                <th>Avance Estimado</th>
+                <th>Desfase</th>
+                <th>Responsable QA</th>
+            </tr>
+        </thead>
+        <tbody id="bodyTable">
+        </tbody>
+    </table>
+</div>
+<div class="row">
+    <div class="chart" id="main1" style="width: 100%; min-height: 400px"></div>
+</div>
+    @section scripts{
+
+        @*<script src="~/Scripts/ECharts/lib/esl.js"></script>
+            <script src="~/Scripts/ECharts/lib/config.js"></script>
+            <script src="~/Scripts/ECharts/lib/jquery.min.js"></script>
+            <script src="~/Scripts/ECharts/lib/facePrint.js"></script>
+            <script src="~/Scripts/ECharts/lib/testHelper.js"></script>*@
+        <script src="~/Scripts/ECharts/echarts.js"></script>
+        <script>
+        $(function () {
+            ExecuteAjax('@Url.Action("Reporte")', "POST", fncEjec, false);
+            ExecuteAjax('@Url.Action("ReporteCabecera")', "POST", fncCabecera, false);
+
+        });
+        function fncCabecera(data) {
+            $('#txtfecha').val(data.Fecha);
+            $('#txtavaesperado').val(data.AvanceEsperado + "%");
+            $('#txtavareal').val(data.AvanceReal + "%");
+        }
+        function fncEjec(data) {
+            var arrayAxisX = [];
+            var dataReal = [];
+            var dataEst = [];
+            $(data).each(function (row) {
+                let tr = document.createElement("tr");
+                let tdSeccion = document.createElement("td");
+                tdSeccion.innerHTML = data[row].Seccion;
+                arrayAxisX.push(data[row].Seccion);
+                tr.appendChild(tdSeccion);
+                let tdtotal = document.createElement("td");
+                tdtotal.innerHTML = data[row].TotalCP;
+                tr.appendChild(tdtotal);
+                let tdfechaIni = document.createElement("td");
+                tdfechaIni.innerHTML = data[row].FechaInicio;
+                tr.appendChild(tdfechaIni);
+                let tdFechafin = document.createElement("td");
+                tdFechafin.innerHTML = data[row].FechaFin;
+                tr.appendChild(tdFechafin);
+                let tdmedia = document.createElement("td");
+                tr.appendChild(tdmedia);
+                tdmedia.innerHTML = data[row].MediaDia;
+                let tdPendientesReales = document.createElement("td");
+                tdPendientesReales.innerHTML = data[row].PorEjecutarReal;
+                tr.appendChild(tdPendientesReales);
+                let tdEjecutadosReales = document.createElement("td");
+                tdEjecutadosReales.innerHTML = data[row].EjecutadosReal;
+                dataReal.push(parseInt(data[row].EjecutadosReal));
+                tr.appendChild(tdEjecutadosReales);
+                let tdEjecutadosCorrectosReales = document.createElement("td");
+                tdEjecutadosCorrectosReales.innerHTML = data[row].EjecutadosExito;
+                tr.appendChild(tdEjecutadosCorrectosReales);
+                let tdEjecutadosIncidenciaReales = document.createElement("td");
+                tdEjecutadosIncidenciaReales.innerHTML = data[row].EjecutadosIncidencia;
+                tr.appendChild(tdEjecutadosIncidenciaReales);
+                let tdPendientesEstiamdo = document.createElement("td");
+                tdPendientesEstiamdo.innerHTML = data[row].PorEjecutarEstimado;
+                tr.appendChild(tdPendientesEstiamdo);
+                let tdEjecutadosEstimado = document.createElement("td");
+                tdEjecutadosEstimado.innerHTML = data[row].EjecutadosEstimado;
+                dataEst.push(parseInt(data[row].EjecutadosEstimado));
+                tr.appendChild(tdEjecutadosEstimado);
+                let tdAvanceReal = document.createElement("td");
+                //tdAvanceReal.innerHTML = data[row].AvanceReal;
+                tdAvanceReal.innerHTML = "<div class=\"progress\"><div class=\"progress-bar progress-bar-striped\" role=\"progressbar\" style=\"width: "+ data[row].AvanceReal +"%\" aria-valuenow=\""+ data[row].AvanceReal +"\" aria-valuemin=\"0\" aria-valuemax=\"100\">"+ data[row].AvanceReal +"%</div></div>"
+                tr.appendChild(tdAvanceReal);
+                let tdAvanceEst = document.createElement("td");
+                //tdAvanceEst.innerHTML = data[row].AvanceEstimado;
+                tdAvanceEst.innerHTML = "<div class=\"progress\"><div class=\"progress-bar progress-bar-striped\" role=\"progressbar\" style=\"width: "+ data[row].AvanceEstimado +"%\" aria-valuenow=\""+ data[row].AvanceEstimado +"\" aria-valuemin=\"0\" aria-valuemax=\"100\">"+ data[row].AvanceEstimado +"%</div></div>"
+                tr.appendChild(tdAvanceEst);
+                let tddesfase = document.createElement("td");
+                var desfase = data[row].AvanceEstimado - data[row].AvanceReal;
+                if (desfase > 0) {
+                    tddesfase.innerHTML = "<div class=\"ciculorojo\"></div>";
+                }
+                else {
+                    tddesfase.innerHTML = "<div class=\"ciculoverde\"></div>";
+                }
+                tr.appendChild(tddesfase);
+                let tdRespQA = document.createElement("td");
+                tdRespQA.innerHTML = data[row].ResponsableQA;
+                tr.appendChild(tdRespQA);
+                $("#bodyTable").append(tr);
+            });
+
+
+
+
+            var option;
+
+            //require([
+            //    'echarts'/*, 'map/js/china' */
+            //], function (echarts) {
+
+                option = {
+                    legend: {},
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    xAxis: {
+                        data: arrayAxisX,
+                        axisLabel: {
+                            rotate: 45,
+                            margin: 8,
+                            inside: false,
+                            "fontSize": 10,
+                            show:true
+                        }
+                    },
+                    yAxis: [{
+                    //    min: 5000000
+                    }, {
+                    }],
+                    grid: {
+                     //   left: 100
+                    },
+                    series: [{
+                        name: 'Ejecutados Reales',
+                        type: 'bar',
+                        data: dataReal,
+                        animation: true
+                    }, {
+                        name: 'Ejecutados Estimado',
+                        type: 'line',
+                        //yAxisIndex: 1,
+                        data: dataEst
+                    }]
+                };
+            let myChart = echarts.init(document.getElementById('main1'));
+            myChart.setOption(option, true);
+                //myChart = testHelper.create(echarts, 'main1', {
+                //    title: 'Reporte avance de casos de pruebas',
+                //    option: option
+                //    //,info: option
+                //    });
+            //});
+        }
+
+
+        </script>
+    }
